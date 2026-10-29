@@ -5,9 +5,10 @@
 package domain_test
 
 import (
-	"aws-architecture-discovery/internal/domain"
 	"reflect"
 	"testing"
+
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 func TestResolveIdentity(t *testing.T) {

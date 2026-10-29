@@ -5,12 +5,13 @@
 package datadog_test
 
 import (
-	"aws-architecture-discovery/internal/adapter/datadog"
 	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/datadog"
 )
 
 func TestDependenciesContract(t *testing.T) {

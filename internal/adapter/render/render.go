@@ -6,7 +6,6 @@
 package render
 
 import (
-	"aws-architecture-discovery/internal/domain"
 	"bytes"
 	"crypto/sha256"
 	"encoding/csv"
@@ -14,6 +13,8 @@ import (
 	"fmt"
 	"html"
 	"strings"
+
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 // Renderer selects one artifact encoding.
@@ -106,7 +107,7 @@ func (r Renderer) Render(input domain.Graph) ([]byte, error) {
 			Schema        string     `json:"schema"`
 			Elements      []element  `json:"elements"`
 			Relationships []relation `json:"relationships"`
-		}{Schema: "aws-architecture-discovery/c4-v1", Elements: []element{}, Relationships: []relation{}}
+		}{Schema: "github.com/raywall/aws-architecture-discovery/c4-v1", Elements: []element{}, Relationships: []relation{}}
 		for _, n := range g.Nodes {
 			out.Elements = append(out.Elements, element{n.ID, n.Name, n.Kind, "container"})
 		}

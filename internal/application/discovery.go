@@ -6,9 +6,10 @@
 package application
 
 import (
-	"aws-architecture-discovery/internal/domain"
 	"context"
 	"fmt"
+
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 // Provider supplies one complete topology snapshot or an error.

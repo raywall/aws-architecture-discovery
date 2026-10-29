@@ -5,11 +5,12 @@
 package application_test
 
 import (
-	"aws-architecture-discovery/internal/application"
-	"aws-architecture-discovery/internal/domain"
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/raywall/aws-architecture-discovery/internal/application"
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 type provider struct{ err error }

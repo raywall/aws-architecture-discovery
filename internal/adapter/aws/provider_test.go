@@ -5,14 +5,15 @@
 package aws
 
 import (
-	"aws-architecture-discovery/internal/domain"
 	"context"
 	"fmt"
-	sdk "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	sdk "github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 func TestLambdaPaginationAndMetadata(t *testing.T) {

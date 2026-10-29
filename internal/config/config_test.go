@@ -5,11 +5,12 @@
 package config_test
 
 import (
-	"aws-architecture-discovery/internal/config"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/raywall/aws-architecture-discovery/internal/config"
 )
 
 func TestValidation(t *testing.T) {

@@ -18,13 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	awsadapter "aws-architecture-discovery/internal/adapter/aws"
-	"aws-architecture-discovery/internal/adapter/datadog"
-	"aws-architecture-discovery/internal/adapter/render"
-	"aws-architecture-discovery/internal/adapter/storage"
-	"aws-architecture-discovery/internal/adapter/telemetry"
-	"aws-architecture-discovery/internal/application"
-	"aws-architecture-discovery/internal/config"
 	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -33,10 +26,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	awsadapter "github.com/raywall/aws-architecture-discovery/internal/adapter/aws"
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/datadog"
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/render"
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/storage"
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/telemetry"
+	"github.com/raywall/aws-architecture-discovery/internal/application"
+	"github.com/raywall/aws-architecture-discovery/internal/config"
 )
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "aws-architecture-discovery"))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "github.com/raywall/aws-architecture-discovery"))
 	if err := run(); err != nil {
 		slog.Error("discovery failed", "error", err)
 		os.Exit(1)
@@ -52,7 +52,7 @@ func run() error {
 		return err
 	}
 	if c.Trace {
-		if err = tracer.Start(tracer.WithService("aws-architecture-discovery")); err != nil {
+		if err = tracer.Start(tracer.WithService("github.com/raywall/aws-architecture-discovery")); err != nil {
 			return err
 		}
 		defer tracer.Stop()

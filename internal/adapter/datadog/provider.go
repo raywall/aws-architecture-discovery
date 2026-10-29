@@ -6,7 +6,6 @@
 package datadog
 
 import (
-	"aws-architecture-discovery/internal/domain"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 // Provider retrieves service-level call relationships; it never invents operation-level data.

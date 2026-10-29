@@ -5,13 +5,14 @@
 package render_test
 
 import (
-	"aws-architecture-discovery/internal/adapter/render"
-	"aws-architecture-discovery/internal/domain"
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/render"
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 func TestFormats(t *testing.T) {

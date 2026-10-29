@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"aws-architecture-discovery/internal/domain"
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 // architectureLabel keeps labels on one line and removes syntax delimiters.

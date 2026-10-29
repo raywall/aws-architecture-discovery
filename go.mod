@@ -1,4 +1,4 @@
-module aws-architecture-discovery
+module github.com/raywall/aws-architecture-discovery
 
 go 1.26.0
 

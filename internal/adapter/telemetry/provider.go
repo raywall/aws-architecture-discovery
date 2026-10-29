@@ -6,10 +6,11 @@
 package telemetry
 
 import (
-	"aws-architecture-discovery/internal/application"
-	"aws-architecture-discovery/internal/domain"
 	"context"
+
 	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
+	"github.com/raywall/aws-architecture-discovery/internal/application"
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 // Provider decorates collection with a native span and topology counts.

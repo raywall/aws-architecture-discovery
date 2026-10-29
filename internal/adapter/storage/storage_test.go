@@ -5,13 +5,14 @@
 package storage_test
 
 import (
-	"aws-architecture-discovery/internal/adapter/storage"
 	"context"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"os"
 	"testing"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/raywall/aws-architecture-discovery/internal/adapter/storage"
 )
 
 type client struct {

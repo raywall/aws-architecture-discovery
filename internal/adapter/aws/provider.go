@@ -6,9 +6,13 @@
 package aws
 
 import (
-	"aws-architecture-discovery/internal/domain"
 	"context"
 	"fmt"
+	"log/slog"
+	"regexp"
+	"strconv"
+	"strings"
+
 	sdk "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/service/apigateway"
@@ -24,10 +28,7 @@ import (
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"log/slog"
-	"regexp"
-	"strconv"
-	"strings"
+	"github.com/raywall/aws-architecture-discovery/internal/domain"
 )
 
 // Provider scans the configured account and region. Each invocation owns its graph.
