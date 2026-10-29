@@ -10,7 +10,8 @@ Requer Go 1.27 (versão registrada no `go.mod`) e credenciais AWS válidas para 
 make build
 cp config.example.yaml config.yaml
 # Ajuste AWS_REGION e, opcionalmente, AWS_PROFILE no arquivo.
-./bin/discovery -config config.yaml
+make run
+# Ou: ./bin/discovery -config config.yaml
 ```
 
 O arquivo resultante será `./diagrams/architecture.mermaid`. `OUTPUT_DESTINATION` é um **diretório ou prefixo S3**, não um nome de arquivo. A execução seguinte substitui o artefato do mesmo formato. Escritas locais usam arquivo temporário privado e rename atômico. Para histórico no S3, habilite versionamento no bucket.
@@ -20,15 +21,23 @@ DISCOVERY_MODE=hybrid OUTPUT_FORMAT=drawio-csv \
 DD_ENV_TARGET=production ./bin/discovery -config config.yaml
 ```
 
+Selecione a fonte no `config.yaml`:
+
+```yaml
+DISCOVERY_MODE: HYBRID # AWS, DATADOG ou HYBRID
+```
+
+Ou sobrescreva pelo ambiente: `DISCOVERY_MODE=DATADOG make run`. `AWS` coleta apenas infraestrutura, `DATADOG` coleta apenas dependências APM e `HYBRID` combina as duas fontes.
+
 Forneça `DD_API_KEY` e `DD_APP_KEY` pelo ambiente ou injeção de segredos. Não coloque chaves em arquivos versionados. Para usar somente Datadog, configure `DISCOVERY_MODE=datadog`; credenciais AWS só serão necessárias se o destino for S3.
 
 ## Configuração
 
-Variáveis de ambiente prevalecem sobre YAML, que prevalece sobre os padrões. Um arquivo só é carregado quando indicado por `-config`; erro de leitura encerra a execução.
+Variáveis de ambiente prevalecem sobre YAML, que prevalece sobre os padrões. `make run` carrega `config.yaml` por padrão; use `make run CONFIG=outro.yaml` para outro arquivo. Na execução direta do binário, indique `-config config.yaml`. Erro de leitura encerra a execução. Para configuração apenas por variáveis de ambiente, use `make run CONFIG=`.
 
 | Variável | Padrão / finalidade |
 |---|---|
-| `DISCOVERY_MODE` | `aws`, `datadog` ou `hybrid`; padrão `aws` |
+| `DISCOVERY_MODE` | `AWS`, `DATADOG` ou `HYBRID`, sem distinção entre maiúsculas e minúsculas; padrão `AWS` |
 | `OUTPUT_FORMAT` | `mermaid`, `drawio-csv`, `c4-json`; padrão `mermaid` |
 | `OUTPUT_DESTINATION` | `./diagrams/` ou `s3://bucket/prefix/` |
 | `AWS_REGION` | Obrigatória para AWS e escrita S3 |

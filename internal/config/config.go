@@ -57,14 +57,14 @@ func Load(file string, cloud bool) (Config, error) {
 			return Config{}, err
 		}
 	}
-	c := Config{Mode: v.GetString("DISCOVERY_MODE"), Format: v.GetString("OUTPUT_FORMAT"), Destination: v.GetString("OUTPUT_DESTINATION"), Region: v.GetString("AWS_REGION"), Profile: v.GetString("AWS_PROFILE"), Role: v.GetString("TARGET_ACCOUNT_ROLE_ARN"), APIKey: v.GetString("DD_API_KEY"), AppKey: v.GetString("DD_APP_KEY"), Site: v.GetString("DD_SITE"), Environment: v.GetString("DD_ENV_TARGET"), Timeout: v.GetDuration("DISCOVERY_TIMEOUT"), Trace: v.GetBool("DD_TRACE_ENABLED"), Cloud: cloud}
+	c := Config{Mode: strings.ToLower(strings.TrimSpace(v.GetString("DISCOVERY_MODE"))), Format: v.GetString("OUTPUT_FORMAT"), Destination: v.GetString("OUTPUT_DESTINATION"), Region: v.GetString("AWS_REGION"), Profile: v.GetString("AWS_PROFILE"), Role: v.GetString("TARGET_ACCOUNT_ROLE_ARN"), APIKey: v.GetString("DD_API_KEY"), AppKey: v.GetString("DD_APP_KEY"), Site: v.GetString("DD_SITE"), Environment: v.GetString("DD_ENV_TARGET"), Timeout: v.GetDuration("DISCOVERY_TIMEOUT"), Trace: v.GetBool("DD_TRACE_ENABLED"), Cloud: cloud}
 	return c, c.Validate()
 }
 
 // Validate rejects unsupported modes, unsafe endpoints and missing required settings.
 func (c Config) Validate() error {
 	if c.Mode != "aws" && c.Mode != "datadog" && c.Mode != "hybrid" {
-		return fmt.Errorf("invalid DISCOVERY_MODE")
+		return fmt.Errorf("invalid DISCOVERY_MODE: use AWS, DATADOG or HYBRID")
 	}
 	if c.Format != "mermaid" && c.Format != "drawio-csv" && c.Format != "c4-json" {
 		return fmt.Errorf("invalid OUTPUT_FORMAT")

@@ -1,4 +1,5 @@
-DISCOVERY_MODE: aws
+# Discovery source: AWS, DATADOG or HYBRID (case-insensitive).
+DISCOVERY_MODE: AWS
 OUTPUT_FORMAT: mermaid
 OUTPUT_DESTINATION: ./diagrams/
 AWS_REGION: us-east-1

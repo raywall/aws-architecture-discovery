@@ -48,3 +48,61 @@ func TestEnvironmentPrecedence(t *testing.T) {
 		t.Fatalf("%+v %v", c, err)
 	}
 }
+
+// TestLoadDiscoveryModes verifies YAML loading and source-specific requirements.
+func TestLoadDiscoveryModes(t *testing.T) {
+	// These cases isolate environment variables because Viper gives them precedence.
+	for _, key := range []string{"DISCOVERY_MODE", "AWS_REGION", "OUTPUT_FORMAT", "OUTPUT_DESTINATION", "DD_API_KEY", "DD_APP_KEY", "DD_SITE", "DD_ENV_TARGET", "DISCOVERY_TIMEOUT"} {
+		t.Setenv(key, "")
+	}
+	for _, tc := range []struct{ mode, region, want string }{
+		{"AWS", "us-east-1", "aws"},
+		{"DATADOG", "", "datadog"},
+		{"HYBRID", "sa-east-1", "hybrid"},
+		{"aws", "us-east-1", "aws"},
+		{" DaTaDoG ", "", "datadog"},
+	} {
+		t.Run(tc.mode, func(t *testing.T) {
+			file := filepath.Join(t.TempDir(), "config.yaml")
+			data := "DISCOVERY_MODE: \"" + tc.mode + "\"\nAWS_REGION: \"" + tc.region + "\"\nOUTPUT_DESTINATION: ./diagrams/\nDD_API_KEY: test-key\nDD_APP_KEY: test-app\nDD_ENV_TARGET: production\n"
+			if err := os.WriteFile(file, []byte(data), 0600); err != nil {
+				t.Fatal(err)
+			}
+			c, err := config.Load(file, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if c.Mode != tc.want || c.Region != tc.region {
+				t.Fatalf("mode=%q region=%q", c.Mode, c.Region)
+			}
+		})
+	}
+}
+
+func TestModeEnvironmentOverridesYAML(t *testing.T) {
+	t.Setenv("DISCOVERY_MODE", "DATADOG")
+	t.Setenv("AWS_REGION", "")
+	t.Setenv("DD_API_KEY", "test-key")
+	t.Setenv("DD_APP_KEY", "test-app")
+	t.Setenv("DD_ENV_TARGET", "production")
+	t.Setenv("DD_SITE", "datadoghq.com")
+	t.Setenv("OUTPUT_DESTINATION", "./diagrams/")
+	file := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(file, []byte("DISCOVERY_MODE: AWS\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	c, err := config.Load(file, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Mode != "datadog" {
+		t.Fatalf("mode=%q", c.Mode)
+	}
+}
+
+func TestExplicitMissingFileFails(t *testing.T) {
+	t.Parallel()
+	if _, err := config.Load(filepath.Join(t.TempDir(), "missing.yaml"), false); err == nil {
+		t.Fatal("missing config ignored")
+	}
+}
