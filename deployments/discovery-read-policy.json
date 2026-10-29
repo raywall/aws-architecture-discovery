@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "tag:GetResources",
+        "lambda:ListFunctions",
+        "lambda:ListEventSourceMappings",
+        "lambda:GetFunctionConfiguration",
+        "apigateway:GET",
+        "ecs:ListClusters",
+        "ecs:ListServices",
+        "ecs:DescribeServices",
+        "ecs:ListTasks",
+        "ecs:DescribeTasks",
+        "ecs:DescribeTaskDefinition",
+        "ecs:ListContainerInstances",
+        "appsync:ListGraphqlApis",
+        "appsync:ListDataSources",
+        "sqs:ListQueues",
+        "sqs:GetQueueAttributes",
+        "sns:ListTopics",
+        "sns:ListSubscriptions",
+        "kafka:ListClustersV2",
+        "kafka:ListTopics",
+        "dynamodb:ListTables",
+        "ssm:DescribeParameters"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

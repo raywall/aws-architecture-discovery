@@ -1,0 +1,11 @@
+DISCOVERY_MODE: aws
+OUTPUT_FORMAT: mermaid
+OUTPUT_DESTINATION: ./diagrams/
+AWS_REGION: us-east-1
+# AWS_PROFILE: development
+# TARGET_ACCOUNT_ROLE_ARN: arn:aws:iam::123456789012:role/ArchitectureDiscoveryReadOnly
+DD_SITE: datadoghq.com
+DD_ENV_TARGET: production
+DISCOVERY_TIMEOUT: 10m
+DD_TRACE_ENABLED: false
+# Provide DD_API_KEY and DD_APP_KEY through environment variables or secret injection.

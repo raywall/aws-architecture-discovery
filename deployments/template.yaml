@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Scheduled or on-demand architecture discovery. Creates no data-plane readers.
+Parameters:
+  DatadogExtensionLayerArn:
+    Type: String
+    Default: ''
+    Description: Optional region-specific ARM64 Datadog extension layer ARN
+  OutputBucket:
+    Type: String
+    Description: Existing destination bucket name
+  OutputPrefix:
+    Type: String
+    Default: maps
+  Environment:
+    Type: String
+    Default: production
+  Team:
+    Type: String
+    Default: platform
+  CostCenter:
+    Type: String
+    Default: engineering
+Conditions:
+  HasDatadogExtension: !Not [!Equals [!Ref DatadogExtensionLayerArn, '']]
+Resources:
+  Discovery:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../build/
+      Handler: bootstrap
+      Runtime: provided.al2023
+      Architectures: [arm64]
+      Layers: !If [HasDatadogExtension, [!Ref DatadogExtensionLayerArn], !Ref 'AWS::NoValue']
+      MemorySize: 512
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          DISCOVERY_MODE: aws
+          OUTPUT_FORMAT: mermaid
+          OUTPUT_DESTINATION: !Sub 's3://${OutputBucket}/${OutputPrefix}/'
+          DISCOVERY_TIMEOUT: 14m
+          DD_TRACE_ENABLED: 'true'
+          DD_SERVICE: aws-architecture-discovery
+          DD_ENV: !Ref Environment
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                  - tag:GetResources
+                  - lambda:ListFunctions
+                  - lambda:ListEventSourceMappings
+                  - lambda:GetFunctionConfiguration
+                  - apigateway:GET
+                  - ecs:ListClusters
+                  - ecs:ListServices
+                  - ecs:DescribeServices
+                  - ecs:ListTasks
+                  - ecs:DescribeTasks
+                  - ecs:DescribeTaskDefinition
+                  - ecs:ListContainerInstances
+                  - appsync:ListGraphqlApis
+                  - appsync:ListDataSources
+                  - sqs:ListQueues
+                  - sqs:GetQueueAttributes
+                  - sns:ListTopics
+                  - sns:ListSubscriptions
+                  - kafka:ListClustersV2
+                  - kafka:ListTopics
+                  - dynamodb:ListTables
+                  - ssm:DescribeParameters
+              Resource: '*'
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::${OutputBucket}/${OutputPrefix}/*'
+      Events:
+        Scheduled:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+        OnDemand:
+          Type: Api
+          Properties:
+            Path: /discover
+            Method: post
+            Auth:
+              Authorizer: AWS_IAM
+      Tags:
+        service: aws-architecture-discovery
+        team: !Ref Team
+        environment: !Ref Environment
+        cost-center: !Ref CostCenter
+        managed-by: sam
+Outputs:
+  FunctionArn:
+    Value: !GetAtt Discovery.Arn
