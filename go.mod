@@ -1,6 +1,6 @@
 module aws-architecture-discovery
 
-go 1.27.0
+go 1.26.0
 
 require (
 	github.com/DataDog/dd-trace-go/v2 v2.11.2

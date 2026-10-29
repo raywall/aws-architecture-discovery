@@ -16,7 +16,7 @@ import (
 
 func TestFormats(t *testing.T) {
 	t.Parallel()
-	for _, format := range []string{"mermaid", "drawio-csv", "c4-json"} {
+	for _, format := range []string{"mermaid", "mermaid-architecture", "drawio-csv", "c4-json"} {
 		t.Run(format, func(t *testing.T) {
 			t.Parallel()
 			r := render.Renderer{Format: format}
@@ -55,5 +55,37 @@ func TestFormats(t *testing.T) {
 	}
 	if _, err := (render.Renderer{Format: "unknown"}).Render(domain.Graph{}); err == nil {
 		t.Fatal("unsupported format accepted")
+	}
+}
+
+func TestArchitectureServicesAndEvidence(t *testing.T) {
+	t.Parallel()
+	g := domain.Graph{
+		Nodes: []domain.Node{
+			{ID: "arn:aws:lambda:us-east-1:123:function:orders", Name: "orders", Kind: "lambda"},
+			{ID: "arn:aws:dynamodb:us-east-1:123:table/orders", Name: "Orders", Kind: "dynamodb"},
+			{ID: "datadog:prod:web", Name: "web]\nservice injected(server)[bad", Kind: "apm-service"},
+		},
+		Edges: []domain.Edge{
+			{From: "datadog:prod:web", To: "arn:aws:lambda:us-east-1:123:function:orders", Kind: "calls", Source: "datadog"},
+			{From: "datadog:prod:web", To: "arn:aws:lambda:us-east-1:123:function:orders", Kind: "references", Source: "aws"},
+		},
+	}
+	r := render.Renderer{Format: "mermaid-architecture"}
+	data, err := r.Render(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, part := range []string{"architecture-beta\n", "group aws(cloud)", "group runtime(cloud)", "(database)[Orders dynamodb]", "calls (datadog)", "references (aws)"} {
+		if !strings.Contains(text, part) {
+			t.Errorf("missing %q", part)
+		}
+	}
+	if strings.Count(text, "\n  service ") != 3 || strings.Count(text, ":R --> L:") != 1 || strings.Contains(text, "\nservice injected") {
+		t.Fatalf("unexpected services or edges: %s", text)
+	}
+	if r.Extension() != "architecture.mermaid" {
+		t.Fatal("architecture artifact would overwrite flowchart")
 	}
 }

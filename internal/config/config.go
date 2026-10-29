@@ -66,7 +66,7 @@ func (c Config) Validate() error {
 	if c.Mode != "aws" && c.Mode != "datadog" && c.Mode != "hybrid" {
 		return fmt.Errorf("invalid DISCOVERY_MODE: use AWS, DATADOG or HYBRID")
 	}
-	if c.Format != "mermaid" && c.Format != "drawio-csv" && c.Format != "c4-json" {
+	if c.Format != "mermaid" && c.Format != "mermaid-architecture" && c.Format != "drawio-csv" && c.Format != "c4-json" {
 		return fmt.Errorf("invalid OUTPUT_FORMAT")
 	}
 	if c.Timeout <= 0 {

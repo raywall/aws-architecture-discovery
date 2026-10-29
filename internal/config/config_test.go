@@ -106,3 +106,11 @@ func TestExplicitMissingFileFails(t *testing.T) {
 		t.Fatal("missing config ignored")
 	}
 }
+
+func TestArchitectureOutputAccepted(t *testing.T) {
+	t.Parallel()
+	c := config.Config{Mode: "aws", Format: "mermaid-architecture", Region: "us-east-1", Destination: "./diagrams", Timeout: time.Minute}
+	if err := c.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}

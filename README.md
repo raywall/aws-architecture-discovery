@@ -38,7 +38,7 @@ Variáveis de ambiente prevalecem sobre YAML, que prevalece sobre os padrões. `
 | Variável | Padrão / finalidade |
 |---|---|
 | `DISCOVERY_MODE` | `AWS`, `DATADOG` ou `HYBRID`, sem distinção entre maiúsculas e minúsculas; padrão `AWS` |
-| `OUTPUT_FORMAT` | `mermaid`, `drawio-csv`, `c4-json`; padrão `mermaid` |
+| `OUTPUT_FORMAT` | `mermaid`, `mermaid-architecture`, `drawio-csv`, `c4-json`; padrão `mermaid` |
 | `OUTPUT_DESTINATION` | `./diagrams/` ou `s3://bucket/prefix/` |
 | `AWS_REGION` | Obrigatória para AWS e escrita S3 |
 | `AWS_PROFILE` | Perfil do provedor padrão, incluindo SSO na CLI |
@@ -50,6 +50,32 @@ Variáveis de ambiente prevalecem sobre YAML, que prevalece sobre os padrões. `
 | `DD_TRACE_ENABLED` | `false` na CLI, `true` em Lambda/ECS |
 
 O provedor padrão do SDK obtém credenciais de ambiente, arquivos, SSO ou execution/task role. O código não solicita perfis explicitamente em cloud; evite configurar `AWS_PROFILE` em Lambda/ECS. A role opcional da conta alvo é usada **somente para discovery**. A escrita S3 utiliza a identidade original de execução, permitindo guardar o resultado na conta de automação.
+
+## Diagrama Mermaid Architecture
+
+Para gerar a sintaxe `architecture-beta` em vez de `flowchart`, configure:
+
+```yaml
+OUTPUT_FORMAT: mermaid-architecture
+```
+
+Ou execute `OUTPUT_FORMAT=mermaid-architecture make run`. O artefato será `architecture.architecture.mermaid` no diretório ou prefixo de saída configurado, separado do flowchart `architecture.mermaid`.
+
+Este formato requer um visualizador compatível com **Mermaid 11.1+**, conforme a [documentação oficial de Architecture](https://mermaid.ai/open-source/syntax/architecture.html). O exportador agrupa recursos identificados por ARN em `AWS resources` e serviços APM ainda não mesclados em `Observed services`. Os ícones usados são os nativos (`server`, `cloud`, `database`, `disk`), sem exigir registro de um pacote de ícones AWS.
+
+Exemplo ilustrativo com identificadores simplificados; o exportador usa identificadores derivados dos IDs dos recursos:
+
+```mermaid
+architecture-beta
+    group aws(cloud)[AWS resources]
+    service api(cloud)[API Gateway] in aws
+    service orders(server)[Orders Lambda] in aws
+    service table(database)[Orders DynamoDB] in aws
+    api:R --> L:orders
+    orders:R --> L:table
+```
+
+Conexões repetidas entre os mesmos serviços são consolidadas visualmente. O tipo e a fonte de cada relação são preservados em comentários `%%` no arquivo, sem rótulos visíveis nas arestas, para manter compatibilidade com a sintaxe inicial de Architecture. Para compatibilidade com parsers antigos de Architecture, os rótulos usam letras ASCII, números, sublinhados e espaços; pontuação e caracteres acentuados são substituídos por espaços. A saída textual é determinística; a disposição visual depende da versão e do motor de layout do visualizador. O formato `mermaid` continua disponível como flowchart com rótulos nas relações.
 
 ## Pipeline e organização
 

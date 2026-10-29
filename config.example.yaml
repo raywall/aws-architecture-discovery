@@ -1,5 +1,6 @@
 # Discovery source: AWS, DATADOG or HYBRID (case-insensitive).
 DISCOVERY_MODE: AWS
+# Formats: mermaid, mermaid-architecture, drawio-csv, c4-json.
 OUTPUT_FORMAT: mermaid
 OUTPUT_DESTINATION: ./diagrams/
 AWS_REGION: us-east-1

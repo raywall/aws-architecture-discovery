@@ -26,6 +26,8 @@ func (r Renderer) Extension() string {
 	switch r.Format {
 	case "mermaid":
 		return "mermaid"
+	case "mermaid-architecture":
+		return "architecture.mermaid"
 	case "drawio-csv":
 		return "csv"
 	default:
@@ -60,6 +62,8 @@ func (r Renderer) Render(input domain.Graph) ([]byte, error) {
 	g := domain.Resolve([]domain.Graph{input})
 	var b bytes.Buffer
 	switch r.Format {
+	case "mermaid-architecture":
+		return renderArchitecture(g), nil
 	case "mermaid":
 		b.WriteString("flowchart LR\n")
 		for _, n := range g.Nodes {
