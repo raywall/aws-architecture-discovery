@@ -33,6 +33,10 @@ import (
 // Provider scans the configured account and region. Each invocation owns its graph.
 type Provider struct { // Config provides SDK credentials, region and HTTP transport.
 	Config sdk.Config
+	// AccountName is the display name for the scanned account.
+	AccountName string
+	// AccountNames maps referenced account IDs to display names.
+	AccountNames map[string]string
 }
 type scan struct {
 	cfg                sdk.Config
@@ -68,6 +72,17 @@ func (p Provider) Collect(ctx context.Context) (domain.Graph, error) {
 					s.edge(from, n.ID, "references")
 				}
 			}
+		}
+	}
+	for i := range s.graph.Nodes {
+		n := &s.graph.Nodes[i]
+		n.AccountID = s.account
+		if parsed, err := arn.Parse(n.ID); err == nil && parsed.AccountID != "" {
+			n.AccountID = parsed.AccountID
+		}
+		n.AccountName = p.AccountNames[n.AccountID]
+		if n.AccountID == s.account && p.AccountName != "" {
+			n.AccountName = p.AccountName
 		}
 	}
 	return s.graph, nil

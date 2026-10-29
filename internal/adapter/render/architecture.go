@@ -7,6 +7,7 @@ package render
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 
 	"aws-architecture-discovery/internal/domain"
@@ -44,26 +45,62 @@ func architectureIcon(kind string) string {
 func renderArchitecture(g domain.Graph) []byte {
 	var b bytes.Buffer
 	b.WriteString("architecture-beta\n")
-	hasAWS, hasRuntime := false, false
+	groups := map[string]string{}
+	owners := map[string]string{}
+	named := map[string]bool{}
 	for _, n := range g.Nodes {
-		if strings.HasPrefix(n.ID, "arn:") {
-			hasAWS = true
-		} else {
-			hasRuntime = true
+		account := n.AccountID
+		if account == "" {
+			parts := strings.SplitN(n.ID, ":", 6)
+			if len(parts) == 6 && parts[0] == "arn" {
+				account = parts[4]
+				if account == "" {
+					account = "unknown"
+				}
+			}
 		}
+		key := "runtime"
+		name := "Observed services"
+		if account != "" {
+			key = "account:" + account
+			name = n.AccountName
+			if name == "" {
+				name = "aws_" + account
+			}
+		}
+		// Prefer a configured name deterministically when snapshots share an account.
+		explicit := account != "" && n.AccountName != ""
+		if old, ok := groups[key]; !ok || explicit && !named[key] || explicit == named[key] && name < old {
+			groups[key] = name
+			named[key] = explicit
+		}
+		owners[n.ID] = key
 	}
-	if hasAWS {
-		b.WriteString("  group aws(cloud)[AWS resources]\n")
+	keys := make([]string, 0, len(groups))
+	for key := range groups {
+		keys = append(keys, key)
 	}
-	if hasRuntime {
-		b.WriteString("  group runtime(cloud)[Observed services]\n")
+	sort.Strings(keys)
+	ids := map[string]string{}
+	counts := map[string]int{}
+	for _, key := range keys {
+		id := strings.ReplaceAll(architectureLabel(groups[key]), " ", "_")
+		if key == "runtime" {
+			id = "runtime"
+		}
+		ids[key] = id
+		counts[id]++
+	}
+	for _, key := range keys {
+		id := ids[key]
+		if counts[id] > 1 || strings.HasPrefix(id, "n") && len(id) == 65 {
+			id += "_" + identifier(key)
+		}
+		ids[key] = id
+		fmt.Fprintf(&b, "  group %s(cloud)[%s]\n", id, architectureLabel(groups[key]))
 	}
 	for _, n := range g.Nodes {
-		group := "runtime"
-		if strings.HasPrefix(n.ID, "arn:") {
-			group = "aws"
-		}
-		fmt.Fprintf(&b, "  service %s(%s)[%s] in %s\n", identifier(n.ID), architectureIcon(n.Kind), architectureLabel(n.Name+" - "+n.Kind), group)
+		fmt.Fprintf(&b, "  service %s(%s)[%s] in %s\n", identifier(n.ID), architectureIcon(n.Kind), architectureLabel(n.Name+" - "+n.Kind), ids[owners[n.ID]])
 	}
 	seen := map[[2]string]bool{}
 	for _, e := range g.Edges {

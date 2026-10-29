@@ -61,3 +61,31 @@ func TestPipeline(t *testing.T) {
 		})
 	}
 }
+
+type graphProvider struct{ graph domain.Graph }
+
+func (p graphProvider) Collect(context.Context) (domain.Graph, error) { return p.graph, nil }
+
+type capturingRenderer struct{ graph domain.Graph }
+
+func (r *capturingRenderer) Render(g domain.Graph) ([]byte, error) {
+	r.graph = g
+	return []byte("artifact"), nil
+}
+func (*capturingRenderer) Extension() string   { return "txt" }
+func (*capturingRenderer) ContentType() string { return "text/plain" }
+
+func TestPipelineAppliesExclusionsBeforeRendering(t *testing.T) {
+	t.Parallel()
+	r := &capturingRenderer{}
+	app := application.Discovery{IgnoreComponents: []string{"ssm-parameters"}, Providers: []application.Provider{graphProvider{domain.Graph{
+		Nodes: []domain.Node{{ID: "function", Kind: "lambda"}, {ID: "parameter", Kind: "ssm-parameter"}},
+		Edges: []domain.Edge{{From: "function", To: "parameter", Kind: "references"}},
+	}}}, Renderer: r, Sink: &sink{}}
+	if _, err := app.Execute(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(r.graph.Nodes) != 1 || r.graph.Nodes[0].ID != "function" || len(r.graph.Edges) != 0 {
+		t.Fatalf("renderer received excluded components: %+v", r.graph)
+	}
+}

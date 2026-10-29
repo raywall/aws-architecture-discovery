@@ -114,3 +114,32 @@ func TestArchitectureOutputAccepted(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestIgnoreAndAccountConfiguration(t *testing.T) {
+	t.Setenv("IGNORE_COMPONENTS", "")
+	t.Setenv("AWS_ACCOUNT_NAME", "")
+	t.Setenv("AWS_ACCOUNT_NAMES", "")
+	t.Setenv("DISCOVERY_MODE", "AWS")
+	t.Setenv("AWS_REGION", "us-east-1")
+	file := filepath.Join(t.TempDir(), "config.yaml")
+	data := "IGNORE_COMPONENTS:\n  - certificate\n  - rules\n  - ssm-parameters\nAWS_ACCOUNT_NAME: minha_conta\nAWS_ACCOUNT_NAMES:\n  '222222222222': outra_conta\n"
+	if err := os.WriteFile(file, []byte(data), 0600); err != nil {
+		t.Fatal(err)
+	}
+	c, err := config.Load(file, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.IgnoreComponents) != 3 || c.AccountName != "minha_conta" || c.AccountNames["222222222222"] != "outra_conta" {
+		t.Fatal("YAML options not loaded")
+	}
+	t.Setenv("IGNORE_COMPONENTS", "ssm, certificate")
+	t.Setenv("AWS_ACCOUNT_NAME", "override")
+	c, err = config.Load(file, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.IgnoreComponents) != 2 || c.IgnoreComponents[1] != "certificate" || c.AccountName != "override" {
+		t.Fatal("environment overrides not applied")
+	}
+}

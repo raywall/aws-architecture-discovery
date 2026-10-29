@@ -4,6 +4,17 @@ DISCOVERY_MODE: AWS
 OUTPUT_FORMAT: mermaid
 OUTPUT_DESTINATION: ./diagrams/
 AWS_REGION: us-east-1
+# Display name of the scanned account (defaults to aws_<account ID>).
+AWS_ACCOUNT_NAME: minha_conta
+# Optional labels for referenced accounts, keyed by account ID.
+# AWS_ACCOUNT_NAMES:
+#   "222222222222": outra_conta
+# Optional artifact filter; does not disable AWS API calls.
+IGNORE_COMPONENTS: []
+# IGNORE_COMPONENTS:
+#   - certificate
+#   - rules
+#   - ssm-parameters
 # AWS_PROFILE: development
 # TARGET_ACCOUNT_ROLE_ARN: arn:aws:iam::123456789012:role/ArchitectureDiscoveryReadOnly
 DD_SITE: datadoghq.com

@@ -61,7 +61,7 @@ func run() error {
 	defer stop()
 	initCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	app := application.Discovery{Renderer: render.Renderer{Format: c.Format}}
+	app := application.Discovery{IgnoreComponents: c.IgnoreComponents, Renderer: render.Renderer{Format: c.Format}}
 	sink := storage.Sink{Destination: c.Destination}
 	if c.Mode != "datadog" || strings.HasPrefix(c.Destination, "s3://") {
 		options := []func(*awsconfig.LoadOptions) error{awsconfig.WithHTTPClient(&http.Client{Timeout: 30 * time.Second}), awsconfig.WithRetryMaxAttempts(3)}
@@ -84,7 +84,7 @@ func run() error {
 			if c.Role != "" {
 				target.Credentials = aws.NewCredentialsCache(stscreds.NewAssumeRoleProvider(sts.NewFromConfig(base), c.Role))
 			}
-			app.Providers = append(app.Providers, telemetry.Provider{Name: "aws", Inner: awsadapter.Provider{Config: target}})
+			app.Providers = append(app.Providers, telemetry.Provider{Name: "aws", Inner: awsadapter.Provider{Config: target, AccountName: c.AccountName, AccountNames: c.AccountNames}})
 		}
 	}
 	if c.Mode != "aws" {

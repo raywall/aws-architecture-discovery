@@ -16,7 +16,7 @@ lambda:
 	 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags='-s -w' -o build/bootstrap ./cmd/discovery;
 
 clean:
-	@rm -rf bin build coverage.out
+	@rm -rf bin build coverage.out diagrams
 
 run:
 	@go run ./cmd/discovery -config "$(CONFIG)"

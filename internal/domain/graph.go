@@ -12,6 +12,10 @@ import (
 
 // Node is a resource or an observed service. Aliases are explicit identity evidence.
 type Node struct {
+	// AccountID identifies the owning AWS account, including resources whose ARN omits it.
+	AccountID string
+	// AccountName is the configured display name of the owning account.
+	AccountName string
 	// ID is the stable resource identity.
 	ID string
 	// Name is the human-readable resource label.

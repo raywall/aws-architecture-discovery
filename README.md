@@ -41,6 +41,9 @@ Variáveis de ambiente prevalecem sobre YAML, que prevalece sobre os padrões. `
 | `OUTPUT_FORMAT` | `mermaid`, `mermaid-architecture`, `drawio-csv`, `c4-json`; padrão `mermaid` |
 | `OUTPUT_DESTINATION` | `./diagrams/` ou `s3://bucket/prefix/` |
 | `AWS_REGION` | Obrigatória para AWS e escrita S3 |
+| `AWS_ACCOUNT_NAME` | Nome exibido para a conta varrida; padrão `aws_<ID da conta>` |
+| `AWS_ACCOUNT_NAMES` | Mapa YAML opcional de IDs de contas referenciadas para nomes |
+| `IGNORE_COMPONENTS` | Lista YAML opcional de componentes excluídos; no ambiente, valores separados por vírgulas |
 | `AWS_PROFILE` | Perfil do provedor padrão, incluindo SSO na CLI |
 | `TARGET_ACCOUNT_ROLE_ARN` | AssumeRole opcional para o inventário |
 | `DD_API_KEY`, `DD_APP_KEY` | Credenciais da API Datadog |
@@ -61,21 +64,58 @@ OUTPUT_FORMAT: mermaid-architecture
 
 Ou execute `OUTPUT_FORMAT=mermaid-architecture make run`. O artefato será `architecture.architecture.mermaid` no diretório ou prefixo de saída configurado, separado do flowchart `architecture.mermaid`.
 
-Este formato requer um visualizador compatível com **Mermaid 11.1+**, conforme a [documentação oficial de Architecture](https://mermaid.ai/open-source/syntax/architecture.html). O exportador agrupa recursos identificados por ARN em `AWS resources` e serviços APM ainda não mesclados em `Observed services`. Os ícones usados são os nativos (`server`, `cloud`, `database`, `disk`), sem exigir registro de um pacote de ícones AWS.
+Este formato requer um visualizador compatível com **Mermaid 11.1+**, conforme a [documentação oficial de Architecture](https://mermaid.ai/open-source/syntax/architecture.html). O exportador cria um grupo `cloud` por conta AWS, usando `AWS_ACCOUNT_NAME` para a conta varrida e `AWS_ACCOUNT_NAMES` para outras contas referenciadas. Sem nome configurado, usa `aws_<ID da conta>`. Serviços APM mesclados com recursos AWS ficam no grupo da conta; os demais ficam em `Observed services`. Os ícones usados são os nativos (`server`, `cloud`, `database`, `disk`), sem exigir registro de um pacote de ícones AWS.
 
 Exemplo ilustrativo com identificadores simplificados; o exportador usa identificadores derivados dos IDs dos recursos:
 
 ```mermaid
 architecture-beta
-    group aws(cloud)[AWS resources]
-    service api(cloud)[API Gateway] in aws
-    service orders(server)[Orders Lambda] in aws
-    service table(database)[Orders DynamoDB] in aws
+    group minha_conta(cloud)[minha_conta]
+    service api(cloud)[API Gateway] in minha_conta
+    service orders(server)[Orders Lambda] in minha_conta
+    service table(database)[Orders DynamoDB] in minha_conta
     api:R --> L:orders
     orders:R --> L:table
 ```
 
 Conexões repetidas entre os mesmos serviços são consolidadas visualmente. O tipo e a fonte de cada relação são preservados em comentários `%%` no arquivo, sem rótulos visíveis nas arestas, para manter compatibilidade com a sintaxe inicial de Architecture. Para compatibilidade com parsers antigos de Architecture, os rótulos usam letras ASCII, números, sublinhados e espaços; pontuação e caracteres acentuados são substituídos por espaços. A saída textual é determinística; a disposição visual depende da versão e do motor de layout do visualizador. O formato `mermaid` continua disponível como flowchart com rótulos nas relações.
+
+## Ignorar componentes e nomear contas
+
+Exemplo de configuração:
+
+```yaml
+OUTPUT_FORMAT: mermaid-architecture
+AWS_ACCOUNT_NAME: minha_conta
+IGNORE_COMPONENTS:
+  - certificate
+  - rules
+  - ssm-parameters
+# Opcional: nomes de outras contas encontradas nas referências.
+AWS_ACCOUNT_NAMES:
+  "222222222222": conta_integracoes
+```
+
+A conta varrida será apresentada como `group minha_conta(cloud)[minha_conta]`. O ID da conta é obtido pela identidade AWS usada no discovery, inclusive quando `TARGET_ACCOUNT_ROLE_ARN` está configurado. ARNs sem campo de conta, como os do API Gateway, são associados à conta varrida. Referências cujo ARN pertence a outra conta ficam em outro grupo. Não é necessário conceder permissões adicionais de IAM ou Organizations para consultar nomes: os nomes são fornecidos na configuração. Nomes incompatíveis com a sintaxe Mermaid são normalizados e contas com nomes iguais recebem identificadores distintos.
+
+`IGNORE_COMPONENTS` é opcional e vale para **todos os formatos de saída**. O filtro remove os nós correspondentes e suas conexões depois da resolução de identidades AWS/APM. Sem a opção ou com `[]`, nenhum componente é excluído. A coleta continua consultando as APIs; a opção filtra o artefato, não reduz as permissões necessárias.
+
+Os seletores não diferenciam maiúsculas de minúsculas e correspondem ao tipo do nó, serviço AWS, tipo de recurso no ARN ou combinação `serviço:tipo`:
+
+| Seletor | Efeito |
+|---|---|
+| `certificate` ou `certificates` | Exclui recursos `certificate/...`, como certificados ACM |
+| `rule` ou `rules` | Exclui recursos `rule/...`, como regras EventBridge |
+| `ssm-parameter`, `ssm-parameters` ou `ssm parameters` | Exclui parâmetros SSM, mantendo outros tipos do serviço |
+| `ssm` | Exclui todos os recursos do serviço SSM |
+| `events:rule` | Exclui apenas recursos `rule` do serviço `events` |
+| `lambda`, `ecs-task`, `apm-service` | Exclui os respectivos tipos de componente |
+
+O filtro não compara nomes individuais nem usa correspondência parcial. Exemplo pelo ambiente:
+
+```sh
+IGNORE_COMPONENTS=certificate,rules,ssm-parameters AWS_ACCOUNT_NAME=minha_conta make run
+```
 
 ## Pipeline e organização
 

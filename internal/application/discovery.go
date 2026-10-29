@@ -35,6 +35,8 @@ type Sink interface {
 
 // Discovery coordinates collection, identity resolution, rendering and persistence.
 type Discovery struct {
+	// IgnoreComponents removes matching nodes and incident edges after identity resolution.
+	IgnoreComponents []string
 	// Providers contains the enabled topology collectors.
 	Providers []Provider
 	// Renderer encodes the resolved topology.
@@ -56,7 +58,7 @@ func (d Discovery) Execute(ctx context.Context) (string, error) {
 		}
 		parts = append(parts, g)
 	}
-	data, err := d.Renderer.Render(domain.Resolve(parts))
+	data, err := d.Renderer.Render(domain.Exclude(domain.Resolve(parts), d.IgnoreComponents))
 	if err != nil {
 		return "", err
 	}

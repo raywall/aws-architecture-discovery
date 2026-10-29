@@ -15,6 +15,12 @@ import (
 
 // Config contains non-exported-at-runtime settings; never log this structure because it includes secrets.
 type Config struct {
+	// IgnoreComponents lists resource kinds or AWS services excluded from artifacts.
+	IgnoreComponents []string
+	// AccountName labels the scanned AWS account without an additional IAM lookup.
+	AccountName string
+	// AccountNames optionally labels other account IDs found in resource references.
+	AccountNames map[string]string
 	// Mode selects aws, datadog or hybrid ingestion.
 	Mode string
 	// Format selects the artifact encoding.
@@ -58,6 +64,16 @@ func Load(file string, cloud bool) (Config, error) {
 		}
 	}
 	c := Config{Mode: strings.ToLower(strings.TrimSpace(v.GetString("DISCOVERY_MODE"))), Format: v.GetString("OUTPUT_FORMAT"), Destination: v.GetString("OUTPUT_DESTINATION"), Region: v.GetString("AWS_REGION"), Profile: v.GetString("AWS_PROFILE"), Role: v.GetString("TARGET_ACCOUNT_ROLE_ARN"), APIKey: v.GetString("DD_API_KEY"), AppKey: v.GetString("DD_APP_KEY"), Site: v.GetString("DD_SITE"), Environment: v.GetString("DD_ENV_TARGET"), Timeout: v.GetDuration("DISCOVERY_TIMEOUT"), Trace: v.GetBool("DD_TRACE_ENABLED"), Cloud: cloud}
+	c.AccountName = strings.TrimSpace(v.GetString("AWS_ACCOUNT_NAME"))
+	c.AccountNames = v.GetStringMapString("AWS_ACCOUNT_NAMES")
+	if raw, ok := v.Get("IGNORE_COMPONENTS").(string); ok {
+		c.IgnoreComponents = strings.Split(raw, ",")
+	} else {
+		c.IgnoreComponents = v.GetStringSlice("IGNORE_COMPONENTS")
+	}
+	for i := range c.IgnoreComponents {
+		c.IgnoreComponents[i] = strings.TrimSpace(c.IgnoreComponents[i])
+	}
 	return c, c.Validate()
 }
 

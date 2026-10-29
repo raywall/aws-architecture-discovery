@@ -77,7 +77,7 @@ func TestArchitectureServicesAndEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(data)
-	for _, part := range []string{"architecture-beta\n", "group aws(cloud)", "group runtime(cloud)", "(database)[Orders dynamodb]", "calls (datadog)", "references (aws)"} {
+	for _, part := range []string{"architecture-beta\n", "group aws_123(cloud)", "group runtime(cloud)", "(database)[Orders dynamodb]", "calls (datadog)", "references (aws)"} {
 		if !strings.Contains(text, part) {
 			t.Errorf("missing %q", part)
 		}
@@ -87,5 +87,56 @@ func TestArchitectureServicesAndEvidence(t *testing.T) {
 	}
 	if r.Extension() != "architecture.mermaid" {
 		t.Fatal("architecture artifact would overwrite flowchart")
+	}
+}
+
+func TestArchitectureAccountGroups(t *testing.T) {
+	t.Parallel()
+	g := domain.Graph{Nodes: []domain.Node{
+		{ID: "arn:aws:lambda:r:111:function:a", Name: "a", Kind: "lambda", AccountID: "111", AccountName: "minha_conta"},
+		{ID: "arn:aws:apigateway:r::/restapis/api", Name: "api", Kind: "api-gateway-rest", AccountID: "111", AccountName: "minha_conta"},
+		{ID: "arn:aws:sqs:r:222:queue", Name: "queue", Kind: "sqs"},
+		{ID: "dd:service", Name: "apm", Kind: "apm-service"},
+	}}
+	r := render.Renderer{Format: "mermaid-architecture"}
+	b, err := r.Render(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(b)
+	for _, want := range []string{"group minha_conta(cloud)[minha_conta]", "group aws_222(cloud)[aws_222]", "group runtime(cloud)[Observed services]"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %s", want)
+		}
+	}
+	if strings.Count(s, " in minha_conta\n") != 2 {
+		t.Fatal("accountless ARN not assigned to scanned account")
+	}
+	g.Nodes[0], g.Nodes[3] = g.Nodes[3], g.Nodes[0]
+	again, _ := r.Render(g)
+	if !bytes.Equal(b, again) {
+		t.Fatal("group order is unstable")
+	}
+}
+
+func TestArchitectureAccountNameCollisions(t *testing.T) {
+	t.Parallel()
+	g := domain.Graph{Nodes: []domain.Node{{ID: "a", AccountID: "111", AccountName: "same"}, {ID: "b", AccountID: "222", AccountName: "same"}}}
+	data, err := (render.Renderer{Format: "mermaid-architecture"}).Render(g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	groups := map[string]bool{}
+	for _, line := range strings.Split(string(data), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) > 1 && fields[0] == "group" {
+			if groups[fields[1]] {
+				t.Fatal("duplicate group identifier")
+			}
+			groups[fields[1]] = true
+		}
+	}
+	if len(groups) != 2 {
+		t.Fatal("distinct accounts were merged")
 	}
 }
