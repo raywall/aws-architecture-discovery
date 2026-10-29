@@ -116,6 +116,52 @@ O motor usa `dd-trace-go/v2` diretamente, com spans de execução e de coleta, c
 
 A [biblioteca Go do Datadog](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/go/) precisa de um destino de ingestão de traces: configure Agent em ECS/CLI ou a extensão Datadog na Lambda. A instrumentação no código não substitui o transporte. O template permite informar `DatadogExtensionLayerArn`; injete a chave/secret e demais configurações de ingestão conforme seu ambiente. Sem Agent/extensão configurado, a geração do desenho funciona, mas a entrega dos traces não está garantida. As credenciais para ler a API APM são independentes desse transporte.
 
+## Uso como package em outra aplicação Go (proposta)
+
+O objetivo deste exemplo é importar `aws-architecture-discovery` diretamente no `main.go` de outra aplicação, executando o discovery no mesmo processo, sem servidor HTTP e sem copiar o projeto manualmente.
+
+**Este exemplo ainda não é executável com a estrutura atual.** As funcionalidades estão em `internal/`, que não pode ser importado por outro módulo. Para disponibilizar esse uso, será necessário expor um package público com `Config`, `New` e `Execute`, ajustar o caminho do módulo para `github.com/raywall/aws-architecture-discovery` e publicar essa alteração no repositório. Os nomes e campos abaixo representam a interface proposta.
+
+Exemplo de `main.go` da aplicação consumidora:
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "time"
+
+    discovery "github.com/raywall/aws-architecture-discovery"
+)
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+    defer cancel()
+
+    app, err := discovery.New(discovery.Config{
+        Mode:        "HYBRID",
+        Region:      "sa-east-1",
+        Format:      "mermaid",
+        Destination: "./diagrams/",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    location, err := app.Execute(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Printf("Diagrama gerado: %s", location)
+}
+```
+
+Na proposta, `Mode` seleciona `AWS`, `DATADOG` ou `HYBRID`. O modo híbrido também precisará receber as configurações Datadog (`DD_API_KEY`, `DD_APP_KEY`, `DD_SITE` e `DD_ENV_TARGET`); o carregamento dessas variáveis pela biblioteca ainda deverá ser implementado. As credenciais AWS devem estar disponíveis na máquina ou na role de execução.
+
+Após a publicação do package, a aplicação consumidora poderá adicionar a dependência com `go get github.com/raywall/aws-architecture-discovery@<versão-publicada>`, substituindo o marcador por uma versão real. O Go baixará o módulo e suas dependências automaticamente. Não há uma versão desta interface publicada por este exemplo.
+
 ## Verificação
 
 ```sh
